@@ -1,0 +1,104 @@
+name: Build NX30PRO NMBM
+
+on:
+  push:
+    branches:
+      - openwrt-24.10-6.6
+      - nx30pro-passwall
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            ack antlr3 asciidoc autoconf automake autopoint \
+            binutils bison build-essential bzip2 ccache clang cmake \
+            cpio curl device-tree-compiler ecj fastjar flex gawk gettext \
+            gcc-multilib g++-multilib git gnutls-dev gperf \
+            help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
+            libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev \
+            libncurses-dev libpython3-dev libreadline-dev libssl-dev \
+            libtool libyaml-dev libz-dev lld llvm lrzsz make mkisofs \
+            msmtp nano ninja-build p7zip-full patch pkgconf \
+            python3 python3-pip python3-ply python3-docutils \
+            python3-pyelftools qemu-utils re2c rsync scons \
+            squashfs-tools subversion swig texinfo uglifyjs unzip \
+            upx-ucl wget xsltproc zlib1g-dev zstd
+
+      - name: Update and install feeds
+        shell: bash
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Prepare NX30PRO configuration
+        shell: bash
+        run: |
+          bash scripts/build-nx30pro.sh
+
+      - name: Download sources
+        shell: bash
+        run: |
+          make download -j"$(nproc)" V=s
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          make -j"$(nproc)" world V=s
+
+      - name: Verify target and packages
+        shell: bash
+        run: |
+          set -eux
+          target_dir="bin/targets/mediatek/filogic"
+          test -d "$target_dir"
+          find "$target_dir" -maxdepth 1 -type f -name '*h3c*' -print
+          factory="$(find "$target_dir" -maxdepth 1 -type f -name '*h3c*factory.bin' | head -n 1)"
+          sysupgrade="$(find "$target_dir" -maxdepth 1 -type f -name '*h3c*sysupgrade.bin' | head -n 1)"
+          test -n "$factory"
+          test -n "$sysupgrade"
+          test "$(stat -c '%s' "$factory")" -le $((65536 * 1024))
+          manifest="$(find "$target_dir" -maxdepth 1 -type f -name '*h3c*manifest' | head -n 1)"
+          test -n "$manifest"
+          grep -q '^luci-app-passwall ' "$manifest"
+          grep -q '^sing-box ' "$manifest"
+          grep -q '^xray-core ' "$manifest"
+          grep -q '^v2ray-geoip ' "$manifest"
+          grep -q '^v2ray-geosite ' "$manifest"
+          ! grep -Eq '^(mwan3|luci-app-mwan3|vlmcsd|luci-app-vlmcsd|wrtbwmon|luci-app-wrtbwmon|ttyd|luci-app-ttyd) ' "$manifest"
+          mkdir -p artifacts
+          cp "$factory" "$sysupgrade" "$manifest" artifacts/
+          cp .config artifacts/nx30pro-nmbm.config
+          git -C feeds/passwall_luci rev-parse HEAD > artifacts/passwall-luci.commit
+          git -C feeds/passwall_packages rev-parse HEAD > artifacts/passwall-packages.commit
+          sha256sum artifacts/* > artifacts/sha256sums
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: immortalwrt-nx30pro-nmbm-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: error
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*
