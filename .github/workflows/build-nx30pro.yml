@@ -55,12 +55,12 @@ jobs:
       - name: Download sources
         shell: bash
         run: |
-          make download -j"$(nproc)" V=s
+          make download -j"$(nproc)"
 
       - name: Build firmware
         shell: bash
         run: |
-          make -j"$(nproc)" world V=s
+          make -j"$(nproc)" world
 
       - name: Verify target and packages
         shell: bash
