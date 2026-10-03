@@ -4,6 +4,7 @@ set -eu
 ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 BASE_CONFIG="$ROOT_DIR/defconfig/mt7981-ax3000.config"
 PROFILE_CONFIG="$ROOT_DIR/configs/nx30pro-nmbm.config"
+SING_BOX_PATCH="$ROOT_DIR/patches/passwall_packages/0001-sing-box-go-1.23-compat.patch"
 
 cd "$ROOT_DIR"
 
@@ -16,6 +17,32 @@ if [ ! -f "$PROFILE_CONFIG" ]; then
 	echo "missing profile config: $PROFILE_CONFIG" >&2
 	exit 1
 fi
+
+if [ ! -f "$SING_BOX_PATCH" ]; then
+	echo "missing sing-box compatibility patch: $SING_BOX_PATCH" >&2
+	exit 1
+fi
+
+# ImmortalWrt 24.10 ships Go 1.23.x. The current PassWall feed moved
+# sing-box to a Go 1.25.5-only release, so keep the compatible package pinned.
+SING_BOX_MAKEFILE="$ROOT_DIR/feeds/passwall_packages/sing-box/Makefile"
+if [ ! -f "$SING_BOX_MAKEFILE" ]; then
+	echo "missing PassWall sing-box package: $SING_BOX_MAKEFILE" >&2
+	exit 1
+fi
+
+case "$(sed -n 's/^PKG_VERSION:=//p' "$SING_BOX_MAKEFILE" | head -n 1)" in
+	1.14.2)
+		git -C "$ROOT_DIR/feeds/passwall_packages" apply "$SING_BOX_PATCH"
+		;;
+	1.12.23)
+		;;
+	*)
+		echo "unexpected sing-box version in PassWall feed" >&2
+		sed -n 's/^PKG_VERSION:=/found: /p' "$SING_BOX_MAKEFILE" >&2
+		exit 1
+		;;
+esac
 
 cp "$BASE_CONFIG" .config
 
