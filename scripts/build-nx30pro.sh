@@ -66,6 +66,9 @@ done < "$PROFILE_CONFIG"
 
 make defconfig
 
+echo "Final target and PassWall configuration:"
+grep -E '^(CONFIG_TARGET_PROFILE|CONFIG_TARGET_DEVICE_mediatek|CONFIG_PACKAGE_(luci-app-passwall|sing-box|xray-core|v2ray-geoip|v2ray-geosite))' .config || true
+
 grep -q '^CONFIG_TARGET_PROFILE="DEVICE_h3c_magic-nx30-pro-nmbm"$' .config
 grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
 grep -q '^CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox=y$' .config
