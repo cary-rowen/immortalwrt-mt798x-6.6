@@ -76,6 +76,7 @@ platform_do_upgrade() {
 	xiaomi,mi-router-ax3000t-ubootmod|\
     xiaomi,mi-router-wr30u-ubootmod|\
 	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-nmbm|\
 	jcg,q30-pro|\
     qihoo,360t7)
 		CI_UBIPART="ubi"

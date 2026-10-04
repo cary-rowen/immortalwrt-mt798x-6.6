@@ -25,6 +25,8 @@ mediatek_setup_interfaces()
 	zbtlink,zbt-z8103ax|\
 	zbtlink,zbt-z8103ax-c*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+		[ "$board" = "h3c,magic-nx30-pro-nmbm" ] && \
+			ucidef_set_interface "lan" ipaddr "192.168.31.1" netmask "255.255.255.0"
 		;;
 	acelink,ew-7886cax)
 		ucidef_set_interface_lan "eth0" "dhcp"
