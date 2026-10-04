@@ -78,12 +78,10 @@ jobs:
           test -n "$manifest"
           grep -q '^luci-app-passwall ' "$manifest"
           grep -q '^sing-box ' "$manifest"
-          grep -q '^v2ray-geoip ' "$manifest"
-          grep -q '^v2ray-geosite ' "$manifest"
           grep -q '^dnsmasq-full ' "$manifest"
-          if grep -Eq '^(xray-core|geoview|xray-plugin|unzip) ' "$manifest"; then
+          if grep -Eq '^(xray-core|geoview|xray-plugin|unzip|v2ray-geoip|v2ray-geosite) ' "$manifest"; then
             echo "unexpected proxy/runtime package found in manifest:"
-            grep -En '^(xray-core|geoview|xray-plugin|unzip) ' "$manifest"
+            grep -En '^(xray-core|geoview|xray-plugin|unzip|v2ray-geoip|v2ray-geosite) ' "$manifest"
             exit 1
           fi
           if grep -Eq '^(mwan3|luci-app-mwan3|vlmcsd|luci-app-vlmcsd|wrtbwmon|luci-app-wrtbwmon|ttyd|luci-app-ttyd|luci-i18n-ttyd[^ ]*|block-mount|blockd|automount|blockdev|kmod-fs-btrfs) ' "$manifest"; then
@@ -96,10 +94,13 @@ jobs:
           cp .config artifacts/nx30pro-nmbm.config
           grep -q '^# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray is not set$' artifacts/nx30pro-nmbm.config
           grep -q '^# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Geoview is not set$' artifacts/nx30pro-nmbm.config
+          grep -q '^# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_V2ray_Geodata is not set$' artifacts/nx30pro-nmbm.config
           grep -q '^# CONFIG_PACKAGE_xray-core is not set$' artifacts/nx30pro-nmbm.config
           grep -q '^# CONFIG_PACKAGE_geoview is not set$' artifacts/nx30pro-nmbm.config
           grep -q '^# CONFIG_PACKAGE_xray-plugin is not set$' artifacts/nx30pro-nmbm.config
           grep -q '^# CONFIG_PACKAGE_unzip is not set$' artifacts/nx30pro-nmbm.config
+          grep -q '^# CONFIG_PACKAGE_v2ray-geoip is not set$' artifacts/nx30pro-nmbm.config
+          grep -q '^# CONFIG_PACKAGE_v2ray-geosite is not set$' artifacts/nx30pro-nmbm.config
           git -C feeds/passwall_luci rev-parse HEAD > artifacts/passwall-luci.commit
           git -C feeds/passwall_packages rev-parse HEAD > artifacts/passwall-packages.commit
           sha256sum artifacts/* > artifacts/sha256sums

@@ -5,6 +5,7 @@ ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 BASE_CONFIG="$ROOT_DIR/defconfig/mt7981-ax3000.config"
 PROFILE_CONFIG="$ROOT_DIR/configs/nx30pro-nmbm.config"
 SING_BOX_PATCH="$ROOT_DIR/patches/passwall_packages/0001-sing-box-go-1.23-compat.patch"
+PASSWALL_LUCI_PATCH="$ROOT_DIR/patches/passwall_luci/0001-remove-unused-runtime-defaults.patch"
 
 cd "$ROOT_DIR"
 
@@ -20,6 +21,11 @@ fi
 
 if [ ! -f "$SING_BOX_PATCH" ]; then
 	echo "missing sing-box compatibility patch: $SING_BOX_PATCH" >&2
+	exit 1
+fi
+
+if [ ! -f "$PASSWALL_LUCI_PATCH" ]; then
+	echo "missing PassWall LuCI patch: $PASSWALL_LUCI_PATCH" >&2
 	exit 1
 fi
 
@@ -43,6 +49,17 @@ case "$(sed -n 's/^PKG_VERSION:=//p' "$SING_BOX_MAKEFILE" | head -n 1)" in
 		exit 1
 		;;
 esac
+
+# Keep the default PassWall config aligned with the cores selected below.
+# Accept an already-applied patch for local reruns, but fail on drift.
+if git -C "$ROOT_DIR/feeds/passwall_luci" apply --check "$PASSWALL_LUCI_PATCH" >/dev/null 2>&1; then
+	git -C "$ROOT_DIR/feeds/passwall_luci" apply "$PASSWALL_LUCI_PATCH"
+elif git -C "$ROOT_DIR/feeds/passwall_luci" apply --reverse --check "$PASSWALL_LUCI_PATCH" >/dev/null 2>&1; then
+	:
+else
+	echo "PassWall LuCI feed does not match the expected patch context" >&2
+	exit 1
+fi
 
 cp "$BASE_CONFIG" .config
 
@@ -99,13 +116,15 @@ FORBIDDEN_PACKAGES="
 	vlmcsd luci-app-vlmcsd \
 	wrtbwmon luci-app-wrtbwmon \
 	xray-core geoview xray-plugin unzip \
+	v2ray-geoip v2ray-geosite \
 	kmod-fs-btrfs block-mount blockdev automount blkid fdisk usbutils \
 	kmod-usb2 kmod-usb3 kmod-usb-net-rndis
 "
 
 FORBIDDEN_OPTIONS="
 	CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray \
-	CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Geoview
+	CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Geoview \
+	CONFIG_PACKAGE_luci-app-passwall_INCLUDE_V2ray_Geodata
 "
 
 # Target and feed defaults can re-enable optional storage packages during
@@ -141,9 +160,10 @@ grep -q '^# CONFIG_PACKAGE_xray-core is not set$' .config
 grep -q '^# CONFIG_PACKAGE_geoview is not set$' .config
 grep -q '^# CONFIG_PACKAGE_xray-plugin is not set$' .config
 grep -q '^# CONFIG_PACKAGE_unzip is not set$' .config
+grep -q '^# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_V2ray_Geodata is not set$' .config
+grep -q '^# CONFIG_PACKAGE_v2ray-geoip is not set$' .config
+grep -q '^# CONFIG_PACKAGE_v2ray-geosite is not set$' .config
 grep -q '^CONFIG_PACKAGE_sing-box=y$' .config
-grep -q '^CONFIG_PACKAGE_v2ray-geoip=y$' .config
-grep -q '^CONFIG_PACKAGE_v2ray-geosite=y$' .config
 grep -q '^CONFIG_PACKAGE_dnsmasq-full=y$' .config
 
 echo "NX30PRO NMBM configuration prepared"

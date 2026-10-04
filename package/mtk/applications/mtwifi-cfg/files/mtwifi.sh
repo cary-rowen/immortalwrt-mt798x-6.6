@@ -6,9 +6,10 @@
 append DRIVERS "mtwifi"
 
 detect_mtwifi() {
-	local idx ifname
+	local board idx ifname
 	local band hwmode htmode htbsscoex ssid dbdc_main channel
 	if [ -d "/sys/module/mt_wifi" ]; then
+		board="$(board_name)"
 		dev_list="$(l1util list)"
 		for dev in $dev_list; do
 			config_get type ${dev} type
@@ -20,7 +21,11 @@ detect_mtwifi() {
 					hwmode="11g"
 					htmode="HE40"
 					htbsscoex="1"
-					ssid="ImmortalWrt-2.4G"
+					if [ "$board" = "h3c,magic-nx30-pro-nmbm" ]; then
+						ssid="eureka"
+					else
+						ssid="ImmortalWrt-2.4G"
+					fi
 					dbdc_main="1"
 					txpower="100"
 					channel="auto"
@@ -29,7 +34,11 @@ detect_mtwifi() {
 					hwmode="11a"
 					htmode="HE160"
 					htbsscoex="0"
-					ssid="ImmortalWrt-5G"
+					if [ "$board" = "h3c,magic-nx30-pro-nmbm" ]; then
+						ssid="eureka_5G"
+					else
+						ssid="ImmortalWrt-5G"
+					fi
 					channel="36"
 					txpower="100"
 					dbdc_main="0"
@@ -62,4 +71,3 @@ EOF
 		done
 	fi
 }
-
