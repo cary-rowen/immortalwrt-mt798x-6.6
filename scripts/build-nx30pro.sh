@@ -5,6 +5,7 @@ ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 BASE_CONFIG="$ROOT_DIR/defconfig/mt7981-ax3000.config"
 PROFILE_CONFIG="$ROOT_DIR/configs/nx30pro-nmbm.config"
 SING_BOX_PATCH="$ROOT_DIR/patches/passwall_packages/0001-sing-box-go-1.23-compat.patch"
+XRAY_PATCH="$ROOT_DIR/patches/passwall_packages/0002-xray-go-1.23-compat.patch"
 
 cd "$ROOT_DIR"
 
@@ -20,6 +21,11 @@ fi
 
 if [ ! -f "$SING_BOX_PATCH" ]; then
 	echo "missing sing-box compatibility patch: $SING_BOX_PATCH" >&2
+	exit 1
+fi
+
+if [ ! -f "$XRAY_PATCH" ]; then
+	echo "missing Xray compatibility patch: $XRAY_PATCH" >&2
 	exit 1
 fi
 
@@ -40,6 +46,25 @@ case "$(sed -n 's/^PKG_VERSION:=//p' "$SING_BOX_MAKEFILE" | head -n 1)" in
 	*)
 		echo "unexpected sing-box version in PassWall feed" >&2
 		sed -n 's/^PKG_VERSION:=/found: /p' "$SING_BOX_MAKEFILE" >&2
+		exit 1
+		;;
+esac
+
+XRAY_MAKEFILE="$ROOT_DIR/feeds/passwall_packages/xray-core/Makefile"
+if [ ! -f "$XRAY_MAKEFILE" ]; then
+	echo "missing PassWall Xray package: $XRAY_MAKEFILE" >&2
+	exit 1
+fi
+
+case "$(sed -n 's/^PKG_VERSION:=//p' "$XRAY_MAKEFILE" | head -n 1)" in
+	26.9.30)
+		git -C "$ROOT_DIR/feeds/passwall_packages" apply "$XRAY_PATCH"
+		;;
+	25.2.21)
+		;;
+	*)
+		echo "unexpected Xray version in PassWall feed" >&2
+		sed -n 's/^PKG_VERSION:=/found: /p' "$XRAY_MAKEFILE" >&2
 		exit 1
 		;;
 esac
