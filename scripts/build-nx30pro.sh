@@ -5,7 +5,6 @@ ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 BASE_CONFIG="$ROOT_DIR/defconfig/mt7981-ax3000.config"
 PROFILE_CONFIG="$ROOT_DIR/configs/nx30pro-nmbm.config"
 SING_BOX_PATCH="$ROOT_DIR/patches/passwall_packages/0001-sing-box-go-1.23-compat.patch"
-XRAY_PATCH="$ROOT_DIR/patches/passwall_packages/0002-xray-go-1.23-compat.patch"
 
 cd "$ROOT_DIR"
 
@@ -21,11 +20,6 @@ fi
 
 if [ ! -f "$SING_BOX_PATCH" ]; then
 	echo "missing sing-box compatibility patch: $SING_BOX_PATCH" >&2
-	exit 1
-fi
-
-if [ ! -f "$XRAY_PATCH" ]; then
-	echo "missing Xray compatibility patch: $XRAY_PATCH" >&2
 	exit 1
 fi
 
@@ -46,25 +40,6 @@ case "$(sed -n 's/^PKG_VERSION:=//p' "$SING_BOX_MAKEFILE" | head -n 1)" in
 	*)
 		echo "unexpected sing-box version in PassWall feed" >&2
 		sed -n 's/^PKG_VERSION:=/found: /p' "$SING_BOX_MAKEFILE" >&2
-		exit 1
-		;;
-esac
-
-XRAY_MAKEFILE="$ROOT_DIR/feeds/passwall_packages/xray-core/Makefile"
-if [ ! -f "$XRAY_MAKEFILE" ]; then
-	echo "missing PassWall Xray package: $XRAY_MAKEFILE" >&2
-	exit 1
-fi
-
-case "$(sed -n 's/^PKG_VERSION:=//p' "$XRAY_MAKEFILE" | head -n 1)" in
-	26.9.30)
-		git -C "$ROOT_DIR/feeds/passwall_packages" apply "$XRAY_PATCH"
-		;;
-	25.2.21)
-		;;
-	*)
-		echo "unexpected Xray version in PassWall feed" >&2
-		sed -n 's/^PKG_VERSION:=/found: /p' "$XRAY_MAKEFILE" >&2
 		exit 1
 		;;
 esac
@@ -123,8 +98,14 @@ FORBIDDEN_PACKAGES="
 	mwan3 luci-app-mwan3 \
 	vlmcsd luci-app-vlmcsd \
 	wrtbwmon luci-app-wrtbwmon \
+	xray-core geoview xray-plugin unzip \
 	kmod-fs-btrfs block-mount blockdev automount blkid fdisk usbutils \
 	kmod-usb2 kmod-usb3 kmod-usb-net-rndis
+"
+
+FORBIDDEN_OPTIONS="
+	CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray \
+	CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Geoview
 "
 
 # Target and feed defaults can re-enable optional storage packages during
@@ -133,6 +114,11 @@ FORBIDDEN_PACKAGES="
 for package in $FORBIDDEN_PACKAGES
 do
 	set_config "CONFIG_PACKAGE_${package}" n
+done
+
+for option in $FORBIDDEN_OPTIONS
+do
+	set_config "$option" n
 done
 
 for package in $FORBIDDEN_PACKAGES
@@ -144,11 +130,20 @@ do
 done
 
 echo "Final target and PassWall configuration:"
-grep -E '^(CONFIG_TARGET_PROFILE|CONFIG_TARGET_DEVICE_mediatek|CONFIG_PACKAGE_(luci-app-passwall|sing-box|xray-core|v2ray-geoip|v2ray-geosite))' .config || true
+grep -E '^(CONFIG_TARGET_PROFILE|CONFIG_TARGET_DEVICE_mediatek|CONFIG_PACKAGE_(luci-app-passwall|sing-box|xray-core|geoview|xray-plugin|v2ray-geoip|v2ray-geosite|dnsmasq-full))' .config || true
 
 grep -q '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_h3c_magic-nx30-pro-nmbm=y$' .config
 grep -q '^CONFIG_PACKAGE_luci-app-passwall=y$' .config
 grep -q '^CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox=y$' .config
-grep -q '^CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray=y$' .config
+grep -q '^# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray is not set$' .config
+grep -q '^# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Geoview is not set$' .config
+grep -q '^# CONFIG_PACKAGE_xray-core is not set$' .config
+grep -q '^# CONFIG_PACKAGE_geoview is not set$' .config
+grep -q '^# CONFIG_PACKAGE_xray-plugin is not set$' .config
+grep -q '^# CONFIG_PACKAGE_unzip is not set$' .config
+grep -q '^CONFIG_PACKAGE_sing-box=y$' .config
+grep -q '^CONFIG_PACKAGE_v2ray-geoip=y$' .config
+grep -q '^CONFIG_PACKAGE_v2ray-geosite=y$' .config
+grep -q '^CONFIG_PACKAGE_dnsmasq-full=y$' .config
 
 echo "NX30PRO NMBM configuration prepared"

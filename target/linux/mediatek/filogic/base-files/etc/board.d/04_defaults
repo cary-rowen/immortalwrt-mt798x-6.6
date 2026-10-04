@@ -7,6 +7,8 @@ board_config_update
 case $board in
 h3c,magic-nx30-pro-nmbm)
 	ucidef_set_root_password_hash '$6$nx30pro$/5KcVjdCwb8u.GZCMz5gSzbDjNsDibwCK5.e4MTN/4e8U1/p0Z3i.mCU2D25jSb9KptNLl5ed7atf2IptU5OM/'
+	ucidef_set_wireless 2g 'eureka'
+	ucidef_set_wireless 5g 'eureka_5G'
 	;;
 openwrt,one)
 	ucidef_set_wireless_mac_count 2g 7
