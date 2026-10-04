@@ -74,7 +74,7 @@ jobs:
           test -n "$factory"
           test -n "$sysupgrade"
           test "$(stat -c '%s' "$factory")" -le $((65536 * 1024))
-          manifest="$(find "$target_dir" -maxdepth 1 -type f -name '*h3c*manifest' | head -n 1)"
+          manifest="$(find "$target_dir" -maxdepth 1 -type f -name '*manifest' | head -n 1)"
           test -n "$manifest"
           grep -q '^luci-app-passwall ' "$manifest"
           grep -q '^sing-box ' "$manifest"
