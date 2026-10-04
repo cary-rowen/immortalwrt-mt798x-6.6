@@ -123,7 +123,8 @@ for package in \
 	mwan3 luci-app-mwan3 \
 	vlmcsd luci-app-vlmcsd \
 	wrtbwmon luci-app-wrtbwmon \
-	kmod-fs-btrfs block-mount blockdev automount
+	kmod-fs-btrfs block-mount blockdev automount blkid fdisk usbutils \
+	kmod-usb2 kmod-usb3 kmod-usb-net-rndis
 do
 	if grep -Eq "^CONFIG_PACKAGE_${package}=[ym]$" .config; then
 		echo "forbidden package selected after defconfig: $package" >&2
