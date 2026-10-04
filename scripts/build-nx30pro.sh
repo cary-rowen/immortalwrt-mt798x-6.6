@@ -118,13 +118,24 @@ done < "$PROFILE_CONFIG"
 
 make defconfig
 
-for package in \
+FORBIDDEN_PACKAGES="
 	luci-app-ttyd luci-i18n-ttyd-zh-cn ttyd \
 	mwan3 luci-app-mwan3 \
 	vlmcsd luci-app-vlmcsd \
 	wrtbwmon luci-app-wrtbwmon \
 	kmod-fs-btrfs block-mount blockdev automount blkid fdisk usbutils \
 	kmod-usb2 kmod-usb3 kmod-usb-net-rndis
+"
+
+# Target and feed defaults can re-enable optional storage packages during
+# defconfig. Reapply the explicit policy to the final configuration before
+# validating and building it.
+for package in $FORBIDDEN_PACKAGES
+do
+	set_config "CONFIG_PACKAGE_${package}" n
+done
+
+for package in $FORBIDDEN_PACKAGES
 do
 	if grep -Eq "^CONFIG_PACKAGE_${package}=[ym]$" .config; then
 		echo "forbidden package selected after defconfig: $package" >&2
