@@ -118,6 +118,19 @@ done < "$PROFILE_CONFIG"
 
 make defconfig
 
+for package in \
+	luci-app-ttyd luci-i18n-ttyd-zh-cn ttyd \
+	mwan3 luci-app-mwan3 \
+	vlmcsd luci-app-vlmcsd \
+	wrtbwmon luci-app-wrtbwmon \
+	kmod-fs-btrfs block-mount blockdev automount
+do
+	if grep -Eq "^CONFIG_PACKAGE_${package}=[ym]$" .config; then
+		echo "forbidden package selected after defconfig: $package" >&2
+		exit 1
+	fi
+done
+
 echo "Final target and PassWall configuration:"
 grep -E '^(CONFIG_TARGET_PROFILE|CONFIG_TARGET_DEVICE_mediatek|CONFIG_PACKAGE_(luci-app-passwall|sing-box|xray-core|v2ray-geoip|v2ray-geosite))' .config || true
 

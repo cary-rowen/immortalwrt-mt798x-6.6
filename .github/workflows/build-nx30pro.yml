@@ -81,7 +81,11 @@ jobs:
           grep -q '^xray-core ' "$manifest"
           grep -q '^v2ray-geoip ' "$manifest"
           grep -q '^v2ray-geosite ' "$manifest"
-          ! grep -Eq '^(mwan3|luci-app-mwan3|vlmcsd|luci-app-vlmcsd|wrtbwmon|luci-app-wrtbwmon|ttyd|luci-app-ttyd) ' "$manifest"
+          if grep -Eq '^(mwan3|luci-app-mwan3|vlmcsd|luci-app-vlmcsd|wrtbwmon|luci-app-wrtbwmon|ttyd|luci-app-ttyd|luci-i18n-ttyd[^ ]*|block-mount|blockd|automount|blockdev|kmod-fs-btrfs) ' "$manifest"; then
+            echo "forbidden package found in manifest:"
+            grep -En '^(mwan3|luci-app-mwan3|vlmcsd|luci-app-vlmcsd|wrtbwmon|luci-app-wrtbwmon|ttyd|luci-app-ttyd|luci-i18n-ttyd[^ ]*|block-mount|blockd|automount|blockdev|kmod-fs-btrfs) ' "$manifest"
+            exit 1
+          fi
           mkdir -p artifacts
           cp "$factory" "$sysupgrade" "$manifest" artifacts/
           cp .config artifacts/nx30pro-nmbm.config
